@@ -1,0 +1,1 @@
+/Users/mz/Documents/projects/pricer/mzpricer/mzpricer-core/target/release/libmzpricer_core.rlib: /Users/mz/Documents/projects/pricer/mzpricer/mzpricer-core/src/lib.rs /Users/mz/Documents/projects/pricer/mzpricer/mzpricer-core/src/pricer.rs

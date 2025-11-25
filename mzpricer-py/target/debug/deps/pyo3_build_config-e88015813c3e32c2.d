@@ -1,0 +1,14 @@
+/Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/deps/pyo3_build_config-e88015813c3e32c2.d: /Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/lib.rs /Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/errors.rs /Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/impl_.rs /Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/build/pyo3-build-config-87f1a1f15f892dc2/out/pyo3-build-config-file.txt /Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/build/pyo3-build-config-87f1a1f15f892dc2/out/pyo3-build-config.txt
+
+/Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/deps/libpyo3_build_config-e88015813c3e32c2.rlib: /Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/lib.rs /Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/errors.rs /Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/impl_.rs /Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/build/pyo3-build-config-87f1a1f15f892dc2/out/pyo3-build-config-file.txt /Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/build/pyo3-build-config-87f1a1f15f892dc2/out/pyo3-build-config.txt
+
+/Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/deps/libpyo3_build_config-e88015813c3e32c2.rmeta: /Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/lib.rs /Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/errors.rs /Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/impl_.rs /Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/build/pyo3-build-config-87f1a1f15f892dc2/out/pyo3-build-config-file.txt /Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/build/pyo3-build-config-87f1a1f15f892dc2/out/pyo3-build-config.txt
+
+/Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/lib.rs:
+/Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/errors.rs:
+/Users/mz/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.21.2/src/impl_.rs:
+/Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/build/pyo3-build-config-87f1a1f15f892dc2/out/pyo3-build-config-file.txt:
+/Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/build/pyo3-build-config-87f1a1f15f892dc2/out/pyo3-build-config.txt:
+
+# env-dep:CARGO_PKG_VERSION=0.21.2
+# env-dep:OUT_DIR=/Users/mz/Documents/projects/pricer/mzpricer/mzpricer-py/target/debug/build/pyo3-build-config-87f1a1f15f892dc2/out
