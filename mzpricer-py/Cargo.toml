@@ -1,0 +1,19 @@
+[package]
+name = "mzpricer"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "mzpricer"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.21", features = ["extension-module", "abi3-py38"] }
+mzpricer-core = { path = "../mzpricer-core" }
+
+[build-dependencies]
+pyo3-build-config = "0.21"
+
+[package.metadata.maturin]
+# (Optional) module-name defaults to library name
+module-name = "mzpricer"
