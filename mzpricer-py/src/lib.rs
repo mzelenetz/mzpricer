@@ -13,9 +13,6 @@ use mzpricer_core::{
     option_iv_vector,
 };
 
-// ---------------------
-// Python TimeDuration
-// ---------------------
 #[pyclass(name = "TimeDuration")]
 #[derive(Clone, Copy)]
 pub struct PyTimeDuration {
@@ -46,9 +43,6 @@ impl PyTimeDuration {
     }
 }
 
-// ---------------------
-// Python StockPrice
-// ---------------------
 #[pyclass(name = "StockPrice")]
 #[derive(Clone)]
 pub struct PyStockPrice {
@@ -80,9 +74,7 @@ impl PyStockPrice {
     }
 }
 
-// ---------------------
-// Utility conversions
-// ---------------------
+
 fn extract_durations(objs: &Bound<'_, PyAny>) -> PyResult<Vec<RustTimeDuration>> {
     let py_list: Vec<PyTimeDuration> = objs.extract()?;
     Ok(py_list.iter().map(|p| p.to_rust()).collect())
@@ -93,9 +85,6 @@ fn extract_optiontype_list(objs: &Bound<'_, PyAny>) -> PyResult<Vec<OptionType>>
     Ok(vals.into_iter().map(|v| if v == 0 { OptionType::Call } else { OptionType::Put }).collect())
 }
 
-// ---------------------
-// option_price binding
-// ---------------------
 #[pyfunction]
 fn option_price(
     s: &Bound<'_, PyAny>,
@@ -227,16 +216,13 @@ fn option_greeks(
             })
             .collect::<PyResult<Vec<_>>>()?
             .into_py(py);
+
         let py_err_codes = err_codes.into_py(py);
         Ok((py_results, py_err_codes).into_py(py))
     })
 }
 
 
-
-// ---------------------
-// pymodule
-// ---------------------
 #[pymodule]
 fn mzpricer(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyTimeDuration>()?;
