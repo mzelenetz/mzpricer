@@ -96,3 +96,51 @@ def test_s_prime():
     expected = 105 - 5 * math.exp(-0.05 * 1.0)
 
     assert abs(s_adj - expected) < 1e-9
+
+
+
+# -------------------------------------------------------------
+# 6. Greeks
+# -------------------------------------------------------------
+def test_vector_vegas():
+    S = [100.0, 100.0]
+    K = [100.0, 100.0]
+    T = [TimeDuration(365, 365)] * 2
+    R = [0.05] * 2
+    SIG = [0.20] * 2
+    CP = [OptionType.Call, OptionType.Put]
+
+    results, errors = mzpricer.option_greeks( S, K, T, R, SIG, CP, precision=2000)
+
+    print(results)
+    assert all(e == 0 for e in errors)
+
+    vegas = [r['vega'] for r in results]
+
+    print("Vegas:", vegas)
+    for result in results:
+        assert abs(result['vega'] - 0.37524) < 0.002
+    diff = abs(vegas[0] - vegas[1])
+    assert diff < 1e-2
+
+def test_vector_deltas():
+    S = [100.0, 100.0]
+    K = [100.0, 100.0]
+    T = [TimeDuration(365, 365)] * 2
+    R = [0.05] * 2
+    SIG = [0.20] * 2
+    CP = [OptionType.Call, OptionType.Put]
+
+    results, errors = mzpricer.option_greeks( S, K, T, R, SIG, CP, precision=2000)
+
+    print(results)
+    assert all(e == 0 for e in errors)
+
+    deltas = [r['delta'] for r in results]
+
+    print("Deltas:", deltas)
+    delta_sum = deltas[0] - deltas[1]
+    print(delta_sum)
+    assert abs(delta_sum - 1) > 0.001, "Delta sum is too close to 1.0, suggesting European parity"
+    assert deltas[1] < 0, "Put Delta non-negative"
+    assert deltas[0] > 0, "Call Delta negative"

@@ -14,6 +14,7 @@ class OptionType(IntEnum):
 from .mzpricer import (
     option_price,
     option_iv,
+    option_greeks,
     TimeDuration,
     StockPrice,
 )

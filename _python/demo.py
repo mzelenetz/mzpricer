@@ -66,3 +66,13 @@ end_time = time.perf_counter()
 elapsed_time = end_time - start_time
 
 print(f"Compute Vols: {elapsed_time:.6f} seconds. Result: {results_iv} Errors: {errors_iv}")
+
+#####
+
+start_time = time.perf_counter()
+results_iv, errors_iv = mzpricer.option_greeks([s_prime,s_prime,s_prime,s_prime], [K,K, 110.0, 110.0], [duration,duration,duration,duration], [R,R,R,R], [.5,.7,.3,.8], [OptionType.Call, OptionType.Put,OptionType.Call, OptionType.Put], precision=1000)
+end_time = time.perf_counter()
+
+elapsed_time = end_time - start_time
+
+print(f"Compute Greeks: {elapsed_time:.6f} seconds. Result: {results_iv} Errors: {errors_iv}")

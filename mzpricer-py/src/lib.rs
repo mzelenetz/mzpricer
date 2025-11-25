@@ -1,11 +1,12 @@
 use pyo3::prelude::*;
-use pyo3::types::PyAny;
+use pyo3::types::{PyAny, PyDict};
 
 use mzpricer_core::{
     TimeDuration as RustTimeDuration,
     StockPrice as RustStockPrice,
     OptionType,
     PriceError,
+    greeks,
     option_price_scalar,
     option_price_vector,
     option_iv_scalar,
@@ -187,6 +188,52 @@ fn option_iv(
 }
 
 
+#[pyfunction]
+fn option_greeks(
+    s: &Bound<'_, PyAny>,
+    k: &Bound<'_, PyAny>,
+    t: &Bound<'_, PyAny>,
+    r: &Bound<'_, PyAny>,
+    sigma: &Bound<'_, PyAny>,
+    cp: &Bound<'_, PyAny>,
+    precision: Option<usize>,
+) -> PyResult<PyObject> {
+    let prec = precision.unwrap_or(500);
+
+    Python::with_gil(|py| {
+        // Vector
+        let s_vec: Vec<f64> = s.extract()?;
+        let k_vec: Vec<f64> = k.extract()?;
+        let t_vec = extract_durations(t)?;
+        let r_vec: Vec<f64> = r.extract()?;
+        let sig_vec: Vec<f64> = sigma.extract()?;
+        let cp_vec = extract_optiontype_list(cp)?;
+
+        let (results, errors) =
+            greeks(&s_vec, &k_vec, &t_vec, &r_vec, &sig_vec, &cp_vec, prec);
+
+
+        let err_codes: Vec<usize> = errors.into_iter().map(|e| e as usize).collect();
+
+        let py_results = results
+            .into_iter()
+            .map(|g| {
+                let d = PyDict::new_bound(py);
+                d.set_item("delta", g.delta)?;
+                d.set_item("gamma", g.gamma)?;
+                d.set_item("vega", g.vega)?;
+                d.set_item("theta", g.theta)?;
+                Ok::<_, PyErr>(d)
+            })
+            .collect::<PyResult<Vec<_>>>()?
+            .into_py(py);
+        let py_err_codes = err_codes.into_py(py);
+        Ok((py_results, py_err_codes).into_py(py))
+    })
+}
+
+
+
 // ---------------------
 // pymodule
 // ---------------------
@@ -195,6 +242,7 @@ fn mzpricer(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyTimeDuration>()?;
     m.add_class::<PyStockPrice>()?;
 
+    m.add_function(wrap_pyfunction!(option_greeks, m)?)?;
     m.add_function(wrap_pyfunction!(option_price, m)?)?;
     m.add_function(wrap_pyfunction!(option_iv, m)?)?;
     

@@ -7,7 +7,7 @@ pub enum OptionType {
 #[derive(Clone, Copy, Debug)]
 pub struct TimeDuration {
     pub value: f64,
-    pub factor: f64, // e.g. 365, 252, etc.
+    pub factor: f64, // this is total units in a year: 365, 252, etc.
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -23,7 +23,7 @@ impl TimeDuration {
         TimeDuration { value, factor }
     }
 
-    /// Calculates the total time to expiration (T) in years.
+    // Calculates the total time to expiration (T) in years.
     pub fn to_years(&self) -> f64 {
         self.value / self.factor
     }
@@ -147,15 +147,6 @@ pub fn option_price_(s: f64, k: f64, delta_t: f64, r: f64, sigma: f64, cp: Optio
     return option_price[0];
 }
 
-pub fn vega(s: f64, k: f64, t: &TimeDuration, r: f64, sigma: f64, cp: OptionType, n: usize, bump: f64) -> f64 {
-  // Calcuate the vega
-  let delta_t = t.to_years() / n as f64;
-  let option_price_bump_up = option_price_(s, k, delta_t, r, sigma + bump, cp, n);
-  let option_price_bump_down = option_price_(s, k, delta_t, r, sigma - bump, cp, n);
-  let vega = (option_price_bump_up - option_price_bump_down) / (2.0 * bump);
-  vega
-}
-
 pub fn option_iv_scalar(
     price: f64,
     s: f64,
@@ -208,15 +199,14 @@ pub fn option_iv_(price: f64, s: f64, k: f64, t: &TimeDuration, r: f64, mut cand
   for _ in 0..MAX_ITER {
     let error = test_price - price;
     if error.abs() < SENSITIVITY {
-        // println!("Converged after {} iterations", i);
         return candidate_sigma;
     }
     // Update vega value
-    let vega_value = vega(s, k, t, r, candidate_sigma, cp, n, VEGA_BUMP);
+    let vega_value = vega_iv_finder(s, k, t, r, candidate_sigma, cp, n, VEGA_BUMP);
 
     // Safety check: Avoid division by zero
     if vega_value.abs() < 1e-10 {
-        // Handle cases where vega is zero (e.g., deep ITM/OTM options)
+        // TODO: Handle cases where vega is zero (e.g., deep ITM/OTM options)
         eprintln!("Warning: Vega too small. Aborting IV calculation.");
         return candidate_sigma; 
     }
@@ -228,4 +218,101 @@ pub fn option_iv_(price: f64, s: f64, k: f64, t: &TimeDuration, r: f64, mut cand
 
     eprintln!("Warning: Did not converge after {} iterations. Returning best guess.", MAX_ITER);
     candidate_sigma
+}
+
+
+pub fn vega(s: f64, k: f64, t: &TimeDuration, r: f64, sigma: f64, cp: OptionType, n: usize, bump: f64) -> f64 {
+  // Calcuate the vega
+  let vega = vega_iv_finder(s, k, t, r, sigma, cp, n, bump);
+  vega/100.0 // Return per 1% change in volatility
+}
+
+pub fn vega_iv_finder(s: f64, k: f64, t: &TimeDuration, r: f64, sigma: f64, cp: OptionType, n: usize, bump: f64) -> f64 {
+  // Calcuate the vega
+  let delta_t = t.to_years() / n as f64;
+  let option_price_bump_up = option_price_(s, k, delta_t, r, sigma + bump, cp, n);
+  let option_price_bump_down = option_price_(s, k, delta_t, r, sigma - bump, cp, n);
+  let vega = (option_price_bump_up - option_price_bump_down) / (2.0 * bump);
+  println!("Vega calculation: price up {}, price down {}, vega {}, delta_t {} bump {}", option_price_bump_up, option_price_bump_down, vega, delta_t, bump);
+  vega
+}
+
+pub fn theta(
+    s: f64,
+    k: f64,
+    t: &TimeDuration,
+    r: f64,
+    sigma: f64,
+    cp: OptionType,
+    precision: usize,
+    price: Option<f64>, // Optional precomputed price
+) -> f64 {
+    let delta_t0 = t.to_years() / precision as f64;
+    let delta_t1 = t.to_years() / precision as f64 + (1.0 / 365.0); // TODO: This is one calendar day later. I may want to make this more flexible
+
+    let price_0 = match price {
+        Some(p) => p,
+        None => option_price_(s, k, delta_t0, r, sigma, cp, precision),
+    };    
+    let price_new = option_price_(s, k, delta_t1, r, sigma, cp, precision);
+    let theta = (price_new - price_0) / (1.0 / 365.0);
+    theta
+}
+
+
+pub struct Greeks {
+    pub delta: f64,
+    pub gamma: f64,
+    pub vega: f64,
+    pub theta: f64,
+}
+
+pub fn greeks(
+    s_vec: &[f64],
+    k_vec: &[f64],
+    t_vec: &[TimeDuration],
+    r_vec: &[f64],
+    sigma_vec: &[f64],
+    cp_vec: &[OptionType],
+    precision: usize,
+) -> (Vec<Greeks>, Vec<PriceError>) {
+    let n = s_vec.len();
+    let mut results = Vec::with_capacity(n);
+    let mut errors = Vec::with_capacity(n);
+    
+    const S_BUMP: f64 = 0.001;
+    const SIGMA_BUMP: f64 = 0.001;
+
+    for i in 0..n {
+        let s = s_vec[i];
+        let k = k_vec[i];
+        let t = &t_vec[i];
+        let r = r_vec[i];
+        let sigma = sigma_vec[i];
+        let cp = cp_vec[i];
+        
+        let delta_t = t.to_years() / precision as f64;
+
+        let price_0 = option_price_(s, k, delta_t, r, sigma, cp, precision);
+
+        let price_up = option_price_(s + S_BUMP, k, delta_t, r, sigma, cp, precision);
+        let price_down = option_price_(s - S_BUMP, k, delta_t, r, sigma, cp, precision);
+
+        let delta_val = (price_up - price_down) / (2.0 * S_BUMP);
+
+        let gamma_val = (price_up - 2.0 * price_0 + price_down) / (S_BUMP * S_BUMP);
+
+        let vega_val = vega(s, k, t, r, sigma, cp, precision, SIGMA_BUMP);
+        let theta_val = theta(s, k, t, r, sigma, cp, precision, Some(price_0));
+        
+        results.push(Greeks {
+            delta: delta_val,
+            gamma: gamma_val,
+            vega: vega_val,
+            theta: theta_val,
+        });
+        errors.push(PriceError::None);
+    }
+
+    (results, errors)
 }
