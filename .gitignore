@@ -5,7 +5,10 @@
 .vscode/
 *.iml
 
+.maturin/
+*.whl
+*.dylib
+*.rlib
+*.rmeta
 
-# If you're using a specific build system or tooling, you might add its output:
-# For example, if using `cargo-watch` with a custom output directory:
-# /custom_output/
+*/target/*
