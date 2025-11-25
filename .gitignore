@@ -1,1 +1,11 @@
-/target
+/target/
+
+# Depending on your IDE, you might want to ignore these too:
+.idea/
+.vscode/
+*.iml
+
+
+# If you're using a specific build system or tooling, you might add its output:
+# For example, if using `cargo-watch` with a custom output directory:
+# /custom_output/
