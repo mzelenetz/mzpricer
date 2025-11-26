@@ -1,4 +1,5 @@
 # MZPricer
+An american options pricer written in Rust. Supports price to vol, vol to price, and greeks. 
 
 ## Installation
 Ensure rust in installed.
