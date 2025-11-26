@@ -27,6 +27,11 @@ impl TimeDuration {
     pub fn to_years(&self) -> f64 {
         self.value / self.factor
     }
+
+    // Add n days
+    pub fn add(&self, days: f64) -> f64 {
+        (self.value + days) / self.factor
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -65,8 +70,7 @@ pub fn option_price_scalar(
     cp: OptionType,
     precision: usize,
 ) -> f64 {
-    let delta_t = t.to_years() / precision as f64;
-    option_price_(s, k, delta_t, r, sigma, cp, precision)
+    option_price_(s, k, *t, r, sigma, cp, precision)
 }
 
 pub fn option_price_vector(
@@ -84,8 +88,7 @@ pub fn option_price_vector(
     let mut errors = Vec::with_capacity(n);
 
     for i in 0..n {
-        let delta_t = t_vec[i].to_years() / precision as f64;
-        let price = option_price_(s_vec[i], k_vec[i], delta_t, r_vec[i], sigma_vec[i], cp_vec[i], precision);
+        let price = option_price_(s_vec[i], k_vec[i], t_vec[i], r_vec[i], sigma_vec[i], cp_vec[i], precision);
         prices.push(price);
         errors.push(PriceError::None);
     }
@@ -93,13 +96,15 @@ pub fn option_price_vector(
     (prices, errors)
 }
 
-pub fn option_price_(s: f64, k: f64, delta_t: f64, r: f64, sigma: f64, cp: OptionType, n: usize) -> f64 {
+pub fn option_price_(s: f64, k: f64, t: TimeDuration, r: f64, sigma: f64, cp: OptionType, n: usize) -> f64 {
     // Implementation of the binomial tree option pricing model for American options.
     // Separate the logic from the caller to allow for more flexible use of the function
     let (sign, base) = match cp {
         OptionType::Call => (1.0, -k),
         OptionType::Put  => (-1.0,  k),
     };
+    
+    let delta_t = t.to_years() / n as f64;
 
     // Calculate the up (u) and down (d) factors
     let u: f64 = (sigma * delta_t.sqrt()).exp();
@@ -192,9 +197,8 @@ pub fn option_iv_(price: f64, s: f64, k: f64, t: &TimeDuration, r: f64, mut cand
   const SENSITIVITY: f64 = 0.00001;
   const VEGA_BUMP: f64 = 0.001;
   let n: usize = precision.unwrap_or(500); // Default 
-  let delta_t = t.to_years() / n as f64;
 
-  let mut test_price = option_price_(s, k, delta_t, r, candidate_sigma, cp, n);
+  let mut test_price = option_price_(s, k, *t, r, candidate_sigma, cp, n);
 
   for _ in 0..MAX_ITER {
     let error = test_price - price;
@@ -212,7 +216,7 @@ pub fn option_iv_(price: f64, s: f64, k: f64, t: &TimeDuration, r: f64, mut cand
     }
 
     candidate_sigma = candidate_sigma - error / vega_value;
-    test_price = option_price_(s, k, delta_t, r, candidate_sigma, cp,  n);
+    test_price = option_price_(s, k, *t, r, candidate_sigma, cp,  n);
 
     }
 
@@ -229,14 +233,12 @@ pub fn vega(s: f64, k: f64, t: &TimeDuration, r: f64, sigma: f64, cp: OptionType
 
 pub fn vega_iv_finder(s: f64, k: f64, t: &TimeDuration, r: f64, sigma: f64, cp: OptionType, n: usize, bump: f64) -> f64 {
   // Calcuate the vega
-  let delta_t = t.to_years() / n as f64;
-  let option_price_bump_up = option_price_(s, k, delta_t, r, sigma + bump, cp, n);
-  let option_price_bump_down = option_price_(s, k, delta_t, r, sigma - bump, cp, n);
+  let option_price_bump_up = option_price_(s, k, *t, r, sigma + bump, cp, n);
+  let option_price_bump_down = option_price_(s, k, *t, r, sigma - bump, cp, n);
   let vega = (option_price_bump_up - option_price_bump_down) / (2.0 * bump);
-  println!("Vega calculation: price up {}, price down {}, vega {}, delta_t {} bump {}", option_price_bump_up, option_price_bump_down, vega, delta_t, bump);
+  println!("Vega calculation: price up {}, price down {}, vega {}, delta_t {:?} bump {}", option_price_bump_up, option_price_bump_down, vega, t, bump);
   vega
 }
-
 pub fn theta(
     s: f64,
     k: f64,
@@ -245,19 +247,18 @@ pub fn theta(
     sigma: f64,
     cp: OptionType,
     precision: usize,
-    price: Option<f64>, // Optional precomputed price
 ) -> f64 {
-    let delta_t0 = t.to_years() / precision as f64;
-    let delta_t1 = t.to_years() / precision as f64 + (1.0 / 365.0); // TODO: This is one calendar day later. I may want to make this more flexible
+    let t1 = TimeDuration {
+        value: t.value - 1.0 / 365.0,
+        factor: 365.0,
+    };
+    let price_0 = option_price_(s, k, *t, r, sigma, cp, precision);
+    let price_1 = option_price_(s, k, t1, r, sigma, cp, precision);
 
-    let price_0 = match price {
-        Some(p) => p,
-        None => option_price_(s, k, delta_t0, r, sigma, cp, precision),
-    };    
-    let price_new = option_price_(s, k, delta_t1, r, sigma, cp, precision);
-    let theta = (price_new - price_0) / (1.0 / 365.0);
-    theta
+    // theta per day:
+    (price_1 - price_0) / (1.0/365.0)
 }
+
 
 
 pub struct Greeks {
@@ -280,7 +281,7 @@ pub fn greeks(
     let mut results = Vec::with_capacity(n);
     let mut errors = Vec::with_capacity(n);
     
-    const S_BUMP: f64 = 0.001;
+    const S_BUMP: f64 = 0.05;
     const SIGMA_BUMP: f64 = 0.001;
 
     for i in 0..n {
@@ -291,19 +292,18 @@ pub fn greeks(
         let sigma = sigma_vec[i];
         let cp = cp_vec[i];
         
-        let delta_t = t.to_years() / precision as f64;
+        let price_0 = option_price_(s, k, *t, r, sigma, cp, precision);
+        
+        let relative_bump = s * S_BUMP;
+        let price_up = option_price_(s + relative_bump, k, *t, r, sigma, cp, precision);
+        let price_down = option_price_(s - relative_bump, k, *t, r, sigma, cp, precision);
 
-        let price_0 = option_price_(s, k, delta_t, r, sigma, cp, precision);
+        let delta_val = (price_up - price_down) / (2.0 * relative_bump);
 
-        let price_up = option_price_(s + S_BUMP, k, delta_t, r, sigma, cp, precision);
-        let price_down = option_price_(s - S_BUMP, k, delta_t, r, sigma, cp, precision);
-
-        let delta_val = (price_up - price_down) / (2.0 * S_BUMP);
-
-        let gamma_val = (price_up - 2.0 * price_0 + price_down) / (S_BUMP * S_BUMP);
+        let gamma_val = (price_up - 2.0 * price_0 + price_down) / (relative_bump * relative_bump);
 
         let vega_val = vega(s, k, t, r, sigma, cp, precision, SIGMA_BUMP);
-        let theta_val = theta(s, k, t, r, sigma, cp, precision, Some(price_0));
+        let theta_val = theta(s, k, t, r, sigma, cp, precision);
         
         results.push(Greeks {
             delta: delta_val,

@@ -102,7 +102,7 @@ def test_s_prime():
 # -------------------------------------------------------------
 # 6. Greeks
 # -------------------------------------------------------------
-def test_vector_vegas():
+def setup():
     S = [100.0, 100.0]
     K = [100.0, 100.0]
     T = [TimeDuration(365, 365)] * 2
@@ -111,6 +111,11 @@ def test_vector_vegas():
     CP = [OptionType.Call, OptionType.Put]
 
     results, errors = mzpricer.option_greeks( S, K, T, R, SIG, CP, precision=2000)
+
+    return results, errors
+
+def test_vector_vegas():
+    results, errors = setup()
 
     print(results)
     assert all(e == 0 for e in errors)
@@ -124,16 +129,8 @@ def test_vector_vegas():
     assert diff < 1e-2
 
 def test_vector_deltas():
-    S = [100.0, 100.0]
-    K = [100.0, 100.0]
-    T = [TimeDuration(365, 365)] * 2
-    R = [0.05] * 2
-    SIG = [0.20] * 2
-    CP = [OptionType.Call, OptionType.Put]
+    results, errors = setup()
 
-    results, errors = mzpricer.option_greeks( S, K, T, R, SIG, CP, precision=2000)
-
-    print(results)
     assert all(e == 0 for e in errors)
 
     deltas = [r['delta'] for r in results]
@@ -144,3 +141,22 @@ def test_vector_deltas():
     assert abs(delta_sum - 1) > 0.001, "Delta sum is too close to 1.0, suggesting European parity"
     assert deltas[1] < 0, "Put Delta non-negative"
     assert deltas[0] > 0, "Call Delta negative"
+
+
+def test_vector_theta():
+    results, _ = setup()
+
+    thetas = [r['theta'] for r in results]
+    expt_theta = -0.01757
+
+    print("Theta:", thetas)
+    assert abs(expt_theta - thetas[0]) < 0.01, "Theta too far from expected"
+
+def test_vector_gamma():
+    results, _ = setup()
+
+    gammas = [r['gamma'] for r in results]
+    expt_gamma = 0.01876
+
+    print("Gamma:", gammas)
+    assert abs(expt_gamma - gammas[0]) < 0.01, "Gamma too far from expected"
