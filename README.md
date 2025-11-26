@@ -16,7 +16,7 @@ To check that it runs:
 1. From in mzpricer-py: `uv run --active maturin build --release`
 1. `uv pip install target/wheels/mzpricer-*.whl`
 
-## To ad a new function
+## To add a new function
 - Implement the function in the core library (pricer.rs)
     - Make sure there is an entry in 
 ```rust
@@ -25,3 +25,5 @@ fn mzpricer(_py: Python, m: &PyModule) -> PyResult<()> {}
 ```
 - Add to library (lib.rs)
 - Write tests (pricer_tests.rs)
+- Add to `__init__.py` (mzpricer-py/mzpricer/__init__.py)
+- Implement in `mzpricer-py/lib.rs`
