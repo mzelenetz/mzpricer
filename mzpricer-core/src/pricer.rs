@@ -259,13 +259,30 @@ pub fn theta(
     (price_1 - price_0) / (1.0/365.0)
 }
 
+pub fn rho(
+    s: f64,
+    k: f64,
+    t: &TimeDuration,
+    r: f64,
+    sigma: f64,
+    cp: OptionType,
+    precision: usize,
+    bump: f64,
+) -> f64 {
+    let price_up = option_price_(s, k, *t, r + bump, sigma, cp, precision);
+    let price_down = option_price_(s, k, *t, r - bump, sigma, cp, precision);
 
+    // rho per 1% change in rate (consistent with your vega normalization)
+    let raw_rho = (price_up - price_down) / (2.0 * bump);
+    raw_rho / 100.0
+}
 
 pub struct Greeks {
     pub delta: f64,
     pub gamma: f64,
     pub vega: f64,
     pub theta: f64,
+    pub rho: f64,
 }
 
 pub fn greeks(
@@ -283,6 +300,7 @@ pub fn greeks(
     
     const S_BUMP: f64 = 0.05;
     const SIGMA_BUMP: f64 = 0.001;
+    const R_BUMP: f64 = 0.0001;
 
     for i in 0..n {
         let s = s_vec[i];
@@ -304,12 +322,14 @@ pub fn greeks(
 
         let vega_val = vega(s, k, t, r, sigma, cp, precision, SIGMA_BUMP);
         let theta_val = theta(s, k, t, r, sigma, cp, precision);
-        
+        let rho_val = rho(s, k, t, r, sigma, cp, precision, R_BUMP);
+
         results.push(Greeks {
             delta: delta_val,
             gamma: gamma_val,
             vega: vega_val,
             theta: theta_val,
+            rho: rho_val
         });
         errors.push(PriceError::None);
     }

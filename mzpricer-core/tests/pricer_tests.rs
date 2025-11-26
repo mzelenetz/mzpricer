@@ -156,3 +156,28 @@ fn test_theta() {
 
 
 }
+
+#[test]
+fn test_rho() {
+    let s = vec![100.0, 100.0];
+    let k = vec![100.0, 100.0];
+    let t = vec![
+        TimeDuration { value: 365.0, factor: 365.0 },
+        TimeDuration { value: 365.0, factor: 365.0 },
+    ];
+    let r = vec![0.05, 0.05];
+    let sigma = vec![0.20, 0.20];
+    let cp = vec![OptionType::Call, OptionType::Put];
+    let precision = 2000; // High precision for better accuracy
+
+    let (greeks_results, errors) = greeks(&s, &k, &t, &r, &sigma, &cp, precision);
+    let call_greeks = &greeks_results[0];
+    let put_greeks = &greeks_results[1];
+
+    println!("Call rho: {}", call_greeks.rho);
+    
+    let expected_rho: f64 = 0.53232;
+    let expected_rho_diff = (expected_rho - call_greeks.rho).abs();
+    assert!(expected_rho_diff < 0.001, "Rho differs by more than tolerance: {}", expected_rho_diff);
+
+}

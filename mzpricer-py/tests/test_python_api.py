@@ -160,3 +160,12 @@ def test_vector_gamma():
 
     print("Gamma:", gammas)
     assert abs(expt_gamma - gammas[0]) < 0.01, "Gamma too far from expected"
+
+def test_vector_rho():
+    results, _ = setup()
+    print(results)
+    rhos = [r['rho'] for r in results]
+    expt_rho = 0.53232
+
+    print("Rho:", rhos)
+    assert abs(expt_rho - rhos[0]) < 0.001, "Rho too far from expected"

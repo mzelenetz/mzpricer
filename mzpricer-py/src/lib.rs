@@ -212,6 +212,7 @@ fn option_greeks(
                 d.set_item("gamma", g.gamma)?;
                 d.set_item("vega", g.vega)?;
                 d.set_item("theta", g.theta)?;
+                d.set_item("rho", g.rho)?;
                 Ok::<_, PyErr>(d)
             })
             .collect::<PyResult<Vec<_>>>()?
